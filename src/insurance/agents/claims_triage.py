@@ -18,6 +18,7 @@ from insurance.config import (
     TRIAGE_HIGH_THRESHOLD,
     TRIAGE_MEDIUM_THRESHOLD,
     TRIAGE_URGENT_THRESHOLD,
+    URGENT_BODILY_INJURY_ADJUSTER,
 )
 
 
@@ -40,7 +41,7 @@ def get_claims_triage_agent() -> AgentDefinition:
                 "parameters": {
                     "claim_id": "{claim_id}",
                     "priority": "urgent",
-                    "assigned_adjuster": "senior-adjuster-garcia",
+                    "assigned_adjuster": URGENT_BODILY_INJURY_ADJUSTER,
                     "triage_reason": (f"Bodily injury claim exceeds ${TRIAGE_URGENT_THRESHOLD:,}"),
                 },
             },
