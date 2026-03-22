@@ -15,30 +15,8 @@ from aios.data_platform.lineage.models import (
 from aios.data_platform.lineage.tracker import LineageTracker
 
 
-def build_insurance_lineage() -> LineageTracker:
-    """Build and return the insurance data lineage graph.
-
-    Graph structure (13 nodes, 12 edges):
-
-        guidewire-claims (DATA_SOURCE) → raw_claims (DATASET, bronze)
-        duck-creek-policy (DATA_SOURCE) → raw_policies (DATASET, bronze)
-        iso-claimsearch (DATA_SOURCE) → raw_fraud_checks (DATASET, bronze)
-
-        raw_claims → enriched_claims (DATASET, silver)
-        raw_policies → clean_policies (DATASET, silver)
-        raw_fraud_checks → fraud_scores (DATASET, silver)
-
-        clean_policies → claims_with_risk (DATASET, gold)
-        enriched_claims → claims_with_risk (DATASET, gold)
-        fraud_scores → claims_with_risk (DATASET, gold)
-
-        claims_with_risk → adjuster_dashboard (SERVING_ENDPOINT)
-        claims_with_risk → management_dashboard (SERVING_ENDPOINT)
-        claims_with_risk → siu_dashboard (SERVING_ENDPOINT)
-    """
-    tracker = LineageTracker()
-
-    # --- Data Sources ---
+def _add_data_sources(tracker: LineageTracker) -> None:
+    """Register the three upstream source systems."""
     tracker.add_node(
         LineageNode(
             id="guidewire-claims",
@@ -64,7 +42,9 @@ def build_insurance_lineage() -> LineageTracker:
         )
     )
 
-    # --- Bronze Layer (raw datasets) ---
+
+def _add_bronze_layer(tracker: LineageTracker) -> None:
+    """Register raw (bronze) dataset nodes."""
     tracker.add_node(
         LineageNode(
             id="raw-claims",
@@ -90,7 +70,9 @@ def build_insurance_lineage() -> LineageTracker:
         )
     )
 
-    # --- Silver Layer (cleaned/enriched) ---
+
+def _add_silver_layer(tracker: LineageTracker) -> None:
+    """Register cleaned/enriched (silver) dataset nodes."""
     tracker.add_node(
         LineageNode(
             id="enriched-claims",
@@ -116,7 +98,9 @@ def build_insurance_lineage() -> LineageTracker:
         )
     )
 
-    # --- Gold Layer ---
+
+def _add_gold_layer(tracker: LineageTracker) -> None:
+    """Register the joined/aggregated (gold) dataset node."""
     tracker.add_node(
         LineageNode(
             id="claims-with-risk",
@@ -126,7 +110,9 @@ def build_insurance_lineage() -> LineageTracker:
         )
     )
 
-    # --- Serving Endpoints ---
+
+def _add_serving_endpoints(tracker: LineageTracker) -> None:
+    """Register the three consumer-facing dashboard endpoints."""
     tracker.add_node(
         LineageNode(
             id="adjuster-dashboard",
@@ -152,7 +138,10 @@ def build_insurance_lineage() -> LineageTracker:
         )
     )
 
-    # --- Edges: Sources → Bronze ---
+
+def _add_edges(tracker: LineageTracker) -> None:
+    """Wire all directed edges across every layer boundary."""
+    # Sources → Bronze
     tracker.add_edge(
         LineageEdge(
             source_node_id="guidewire-claims",
@@ -174,8 +163,7 @@ def build_insurance_lineage() -> LineageTracker:
             edge_type=LineageEdgeType.PRODUCES,
         )
     )
-
-    # --- Edges: Bronze → Silver ---
+    # Bronze → Silver
     tracker.add_edge(
         LineageEdge(
             source_node_id="raw-policies",
@@ -197,8 +185,7 @@ def build_insurance_lineage() -> LineageTracker:
             edge_type=LineageEdgeType.DERIVES,
         )
     )
-
-    # --- Edges: Silver → Gold ---
+    # Silver → Gold
     tracker.add_edge(
         LineageEdge(
             source_node_id="clean-policies",
@@ -220,8 +207,7 @@ def build_insurance_lineage() -> LineageTracker:
             edge_type=LineageEdgeType.DERIVES,
         )
     )
-
-    # --- Edges: Gold → Serving ---
+    # Gold → Serving
     tracker.add_edge(
         LineageEdge(
             source_node_id="claims-with-risk",
@@ -244,4 +230,33 @@ def build_insurance_lineage() -> LineageTracker:
         )
     )
 
+
+def build_insurance_lineage() -> LineageTracker:
+    """Build and return the insurance data lineage graph.
+
+    Graph structure (13 nodes, 12 edges):
+
+        guidewire-claims (DATA_SOURCE) → raw_claims (DATASET, bronze)
+        duck-creek-policy (DATA_SOURCE) → raw_policies (DATASET, bronze)
+        iso-claimsearch (DATA_SOURCE) → raw_fraud_checks (DATASET, bronze)
+
+        raw_claims → enriched_claims (DATASET, silver)
+        raw_policies → clean_policies (DATASET, silver)
+        raw_fraud_checks → fraud_scores (DATASET, silver)
+
+        clean_policies → claims_with_risk (DATASET, gold)
+        enriched_claims → claims_with_risk (DATASET, gold)
+        fraud_scores → claims_with_risk (DATASET, gold)
+
+        claims_with_risk → adjuster_dashboard (SERVING_ENDPOINT)
+        claims_with_risk → management_dashboard (SERVING_ENDPOINT)
+        claims_with_risk → siu_dashboard (SERVING_ENDPOINT)
+    """
+    tracker = LineageTracker()
+    _add_data_sources(tracker)
+    _add_bronze_layer(tracker)
+    _add_silver_layer(tracker)
+    _add_gold_layer(tracker)
+    _add_serving_endpoints(tracker)
+    _add_edges(tracker)
     return tracker
